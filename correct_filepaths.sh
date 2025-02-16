@@ -1,25 +1,27 @@
 #!/usr/bin/env bash
 set -e
 
+FOLDER=$1
+
 # Compute the absolute path to the OfficeHome dataset.
-if [ -d "data/OfficeHome" ]; then
-  OH_PATH="$(cd data/OfficeHome && pwd)"
+if [ -d "data/$FOLDER" ]; then
+  OH_PATH="$(cd data/$FOLDER && pwd)"
 else
-  echo "Error: Directory data/OfficeHome not found." >&2
+  echo "Error: Directory data/$FOLDER not found." >&2
   exit 1
 fi
 
 echo "Using OfficeHome dataset at: ${OH_PATH}"
 
 # --- Update files in the data folder ---
-if [ -d "data/OfficeHome" ]; then
-  pushd data/OfficeHome > /dev/null
+if [ -d "data/office-home" ]; then
+  pushd data/office-home > /dev/null
   # Replace "xxxxxx/office_home" with local absolute path in all .txt files.
   sed -i.bak "s|xxxxxx/office_home|${OH_PATH}|g" *.txt
   rm -f *.bak
   popd > /dev/null
 else
-  echo "Directory data/OfficeHome not found!" >&2
+  echo "Directory data/office-home not found!" >&2
   exit 1
 fi
 

@@ -15,6 +15,8 @@ import torch.optim as optim
 import torch.nn.functional as F
 import utils
 
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 def data_load(args):   
     train_transform = torchvision.transforms.Compose([
         torchvision.transforms.Resize((256, 256)),
@@ -65,7 +67,7 @@ def generate_feature_wrapper(loader, model, args):
             iter_loader = iter(selected_loader)
             for i in range(len(selected_loader)):
                 inputs, labels = iter_loader.next()
-                inputs = inputs.cuda()
+                inputs = inputs.to(DEVICE)
                 if bottleneck_layer is None and args.method !='SHOT':
                     fc_features, logit = classifier_layer(backbone(inputs))
                 elif bottleneck_layer is None and args.method == 'SHOT':
@@ -108,44 +110,44 @@ def train(args):
 
     ## base network
     if args.net == 'resnet101':
-        netG = utils.ResBase101().cuda()
+        netG = utils.ResBase101().to(DEVICE)
     elif args.net == 'resnet50':
-        netG = utils.ResBase50().cuda()
+        netG = utils.ResBase50().to(DEVICE)
     elif args.net == 'resnet34':
-        netG = utils.ResBase34().cuda()  
+        netG = utils.ResBase34().to(DEVICE)
     
     netB = None
     if args.method == 'MCD':
         netF = utils.ClassifierMCD(class_num=args.class_num, feature_dim=netG.in_features, 
-            bottleneck_dim=args.bottleneck_dim).cuda()
+            bottleneck_dim=args.bottleneck_dim).to(DEVICE)
     elif args.method == 'SAFN':
         netF = utils.ClassifierSAFN(class_num=args.class_num, feature_dim=netG.in_features, 
-            bottleneck_dim=args.bottleneck_dim).cuda()
+            bottleneck_dim=args.bottleneck_dim).to(DEVICE)
     elif args.method == 'MDD':
         netF = utils.ClassifierMDD(class_num=args.class_num, feature_dim=netG.in_features, 
-            bottleneck_dim=args.bottleneck_dim, width=args.width).cuda()
+            bottleneck_dim=args.bottleneck_dim, width=args.width).to(DEVICE)
     elif args.method == 'DINE' or (args.method == 'SHOT' and args.dset != 'ImageNet-Sketch'):
         netB = utils.feat_bottleneck(type=args.classifier, feature_dim=netG.in_features, 
-            bottleneck_dim=args.bottleneck_dim).cuda()
+            bottleneck_dim=args.bottleneck_dim).to(DEVICE)
         netF = utils.feat_classifier(type=args.layer, class_num = args.class_num, 
-            bottleneck_dim=args.bottleneck_dim).cuda()
+            bottleneck_dim=args.bottleneck_dim).to(DEVICE)
     elif args.method == 'SHOT' and args.dset == 'ImageNet-Sketch':
-        netF = utils.res_classifier(res_name=args.net).cuda()
+        netF = utils.res_classifier(res_name=args.net).to(DEVICE)
     else:
         netF = utils.ResClassifier(class_num=args.class_num, feature_dim=netG.in_features, 
-            bottleneck_dim=args.bottleneck_dim).cuda()
+            bottleneck_dim=args.bottleneck_dim).to(DEVICE)
 
     if netB is None:
         if args.method == 'SHOT':
             g_path = args.output_dir + '/target_F_par_0.3.pt'
             f_path = args.output_dir + '/target_C_par_0.3.pt'
-            netG.load_state_dict(torch.load(g_path))
-            netF.load_state_dict(torch.load(f_path))
+            netG.load_state_dict(torch.load(g_path, map_location=DEVICE))
+            netF.load_state_dict(torch.load(f_path, map_location=DEVICE))
             base_network = nn.Sequential(netG, netF)
         else:
             ckpt_path = osp.join(args.output_dir, args.ckpt + ".pt")
             base_network = nn.Sequential(netG, netF)
-            base_network.load_state_dict(torch.load(ckpt_path))
+            base_network.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
     else:
         if args.method == 'SHOT':
             g_path = args.output_dir + '/target_F_par_0.3.pt'
@@ -155,9 +157,9 @@ def train(args):
             g_path = args.output_dir + '/dine_F.pt'
             b_path = args.output_dir + '/dine_B.pt'
             f_path = args.output_dir + '/dine_C.pt'
-        netG.load_state_dict(torch.load(g_path))
-        netB.load_state_dict(torch.load(b_path))
-        netF.load_state_dict(torch.load(f_path))
+        netG.load_state_dict(torch.load(g_path, map_location=DEVICE))
+        netB.load_state_dict(torch.load(b_path, map_location=DEVICE))
+        netF.load_state_dict(torch.load(f_path, map_location=DEVICE))
         base_network = nn.Sequential(netG, netB, netF)
 
     base_network.eval()
