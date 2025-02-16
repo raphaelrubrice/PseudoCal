@@ -1,3 +1,10 @@
+# Custom README
+1) Download the [Office-Home](https://www.hemanthdv.org/officeHomeDataset.html) dataset and place it in the data folder
+2) unzip it and remove original zip
+3) launch the `correct_filepaths.sh` script by specifying the name of the unzipped OfficeHome folder in data.
+   ```bash
+   bash correct_filepaths.sh OfficeHomeDataset_10072016```
+
 # Code for **PseudoCal**@ICML 2024
 
 ## [**Pseudo-Calibration: Improving Predictive Uncertainty Estimation in Unsupervised Domain Adaptation**](https://openreview.net/forum?id=XnsI1HKAKC)
