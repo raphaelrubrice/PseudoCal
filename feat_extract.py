@@ -13,6 +13,7 @@ import torchvision
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+from torch.utils.data import DataLoader, RandomSampler
 import utils
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -89,7 +90,21 @@ def generate_feature_wrapper(loader, model, args):
             return features_, outputs_, labels_
 
     def save(loader, data_name):
-        features, outputs, labels = gather_outputs(loader)
+        try:
+            features, outputs, labels = gather_outputs(loader)
+        except:
+            print("Using native dataloader failed. Retrying without multiple workers")
+            if isinstance(loader.sampler, RandomSampler):
+                loader_shuffle = True
+            else:
+                loader_shuffle = False
+            loader = DataLoader(dataset=loader.dataset,
+                                    batch_size=loader.batch_size,
+                                    shuffle=loader_shuffle,
+                                    num_workers=0,  # new number of workers
+                                    collate_fn=loader.collate_fn  # if you use a custom collate_fn
+                                    )
+            features, outputs, labels = gather_outputs(loader)
         np.save(args.output_dir + '/' + data_name + '_feature.npy', features)
         np.save(args.output_dir + '/' + data_name + '_output.npy', outputs)
         np.save(args.output_dir + '/' + data_name + '_label.npy', labels)
