@@ -11,6 +11,8 @@ from sklearn.metrics import brier_score_loss
 import warnings
 warnings.filterwarnings("ignore")
 
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 def get_weight(source_train_feature, target_feature, source_val_feature):
     """
     :param source_train_feature: shape [n_tr, d], features from training set
@@ -68,7 +70,7 @@ class CrossEntropyLabelSmooth(nn.Module):
         """
         log_probs = self.logsoftmax(inputs)
         targets = torch.zeros(log_probs.size()).scatter_(1, targets.unsqueeze(1).cpu(), 1)
-        if self.use_gpu: targets = targets.cuda()
+        if self.use_gpu: targets = targets.to(DEVICE)
         targets = (1 - self.epsilon) * targets + self.epsilon / self.num_classes
         loss = (- targets * log_probs).sum(dim=1)
         if self.reduction:
@@ -132,20 +134,20 @@ class MatrixScalingModel(nn.Module):
         return out
 
 def VectorOrMatrixScaling(logits, labels, outputs_target, labels_target, cal_method=None):
-    nll_criterion = nn.CrossEntropyLoss().cuda()
-    ece_criterion = ECELoss().cuda()
+    nll_criterion = nn.CrossEntropyLoss().to(DEVICE)
+    ece_criterion = ECELoss().to(DEVICE)
     class_num = logits.shape[1]
 
     if cal_method == 'VectorScaling':
-        cal_model = VectorScalingModel(class_num=class_num).cuda()
+        cal_model = VectorScalingModel(class_num=class_num).to(DEVICE)
     elif cal_method == 'MatrixScaling':
-        cal_model = MatrixScalingModel(class_num=class_num).cuda()
+        cal_model = MatrixScalingModel(class_num=class_num).to(DEVICE)
     optimizer = optim.SGD(cal_model.parameters(), lr=0.01, momentum=0.9)
 
-    logits = logits.cuda().float()
-    labels = labels.cuda().long()
-    outputs_target = outputs_target.cuda().float()
-    labels_target = labels_target.cuda().long()
+    logits = logits.to(DEVICE).float()
+    labels = labels.to(DEVICE).long()
+    outputs_target = outputs_target.to(DEVICE).float()
+    labels_target = labels_target.to(DEVICE).long()
 
     # Calculate NLL and ECE before vector scaling or matrix scaling
     before_calibration_nll = nll_criterion(outputs_target, labels_target).item()
@@ -156,7 +158,7 @@ def VectorOrMatrixScaling(logits, labels, outputs_target, labels_target, cal_met
     for _ in range(max_iter):
         optimizer.zero_grad()
         out = cal_model(logits)
-        loss = nn.CrossEntropyLoss().cuda()(out, labels)
+        loss = nn.CrossEntropyLoss().to(DEVICE)(out, labels)
         loss.backward()
         optimizer.step()
     final_output = cal_model(outputs_target)
