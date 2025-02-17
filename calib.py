@@ -266,13 +266,13 @@ def pseudocal(args):
         if args.method == 'SHOT':
             g_path = args.output_dir + '/target_F_par_0.3.pt'
             f_path = args.output_dir + '/target_C_par_0.3.pt'
-            netG.load_state_dict(torch.load(g_path))
-            netF.load_state_dict(torch.load(f_path))
+            netG.load_state_dict(torch.load(g_path, map_location=DEVICE))
+            netF.load_state_dict(torch.load(f_path, map_location=DEVICE))
             base_network = nn.Sequential(netG, netF)
         else:
             ckpt_path = osp.join(args.output_dir, args.ckpt + ".pt")
             base_network = nn.Sequential(netG, netF)
-            base_network.load_state_dict(torch.load(ckpt_path))
+            base_network.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
     else:
         if args.method == 'SHOT':
             g_path = args.output_dir + '/target_F_par_0.3.pt'
@@ -282,9 +282,9 @@ def pseudocal(args):
             g_path = args.output_dir + '/dine_F.pt'
             b_path = args.output_dir + '/dine_B.pt'
             f_path = args.output_dir + '/dine_C.pt'
-        netG.load_state_dict(torch.load(g_path))
-        netB.load_state_dict(torch.load(b_path))
-        netF.load_state_dict(torch.load(f_path))
+        netG.load_state_dict(torch.load(g_path, map_location=DEVICE))
+        netB.load_state_dict(torch.load(b_path, map_location=DEVICE))
+        netF.load_state_dict(torch.load(f_path, map_location=DEVICE))
         base_network = nn.Sequential(netG, netB, netF)
     
     base_network.eval()
