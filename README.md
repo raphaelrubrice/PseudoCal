@@ -4,7 +4,6 @@
 3) launch the `correct_filepaths.sh` script by specifying the name of the unzipped OfficeHome folder in data.
    ```bash
    bash correct_filepaths.sh OfficeHomeDataset_10072016
-```
 4) before run the pseudocal.sh you should download the [PADA.pt](https://drive.google.com/file/d/1qbQMWrBN2Qji8jE0ShzHJjlRNbAPrP__/view) inside the folder `.PseudoCal/logs/uda/train/22/bnm/office-home/AC` and the [bnm.pt](https://drive.google.com/file/d/1Z7nmq07HFmeOCphkxXhVzQuer0dhEfKk/view) inside the folder `.PseudoCal/logs/uda/train/22/bnm/office-home/AC`. No need to unzip. 
 
 
