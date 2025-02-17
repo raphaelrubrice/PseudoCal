@@ -1,0 +1,5 @@
+*.pt
+data/OfficeHomeDataset*/
+*.npy
+__pycache__/
+
