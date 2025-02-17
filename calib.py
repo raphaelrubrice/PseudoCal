@@ -19,6 +19,7 @@ from transcal_utils import get_weight, calculate_brier_score, ECELoss, VectorOrM
 import utils
 import pdb
 
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def data_load(args):   
     train_transform = torchvision.transforms.Compose([
@@ -234,32 +235,32 @@ def pseudocal(args):
 
     ## base network
     if args.net == 'resnet101':
-        netG = utils.ResBase101().cuda()
+        netG = utils.ResBase101().to(DEVICE)
     elif args.net == 'resnet50':
-        netG = utils.ResBase50().cuda()
+        netG = utils.ResBase50().to(DEVICE)
     elif args.net == 'resnet34':
-        netG = utils.ResBase34().cuda()  
+        netG = utils.ResBase34().to(DEVICE)  
     
     netB = None
     if args.method == 'MCD':
         netF = utils.ClassifierMCD(class_num=args.class_num, feature_dim=netG.in_features, 
-            bottleneck_dim=args.bottleneck_dim).cuda()
+            bottleneck_dim=args.bottleneck_dim).to(DEVICE) 
     elif args.method == 'SAFN':
         netF = utils.ClassifierSAFN(class_num=args.class_num, feature_dim=netG.in_features, 
-            bottleneck_dim=args.bottleneck_dim).cuda()
+            bottleneck_dim=args.bottleneck_dim).to(DEVICE) 
     elif args.method == 'MDD':
         netF = utils.ClassifierMDD(class_num=args.class_num, feature_dim=netG.in_features, 
-            bottleneck_dim=args.bottleneck_dim, width=args.width).cuda()
+            bottleneck_dim=args.bottleneck_dim, width=args.width).to(DEVICE) 
     elif args.method == 'DINE' or (args.method == 'SHOT' and args.dset != 'ImageNet-Sketch'):
         netB = utils.feat_bottleneck(type=args.classifier, feature_dim=netG.in_features, 
-            bottleneck_dim=args.bottleneck_dim).cuda()
+            bottleneck_dim=args.bottleneck_dim).to(DEVICE) 
         netF = utils.feat_classifier(type=args.layer, class_num = args.class_num, 
-            bottleneck_dim=args.bottleneck_dim).cuda()
+            bottleneck_dim=args.bottleneck_dim).to(DEVICE) 
     elif args.method == 'SHOT' and args.dset == 'ImageNet-Sketch':
-        netF = utils.res_classifier(res_name=args.net).cuda()
+        netF = utils.res_classifier(res_name=args.net).to(DEVICE) 
     else:
         netF = utils.ResClassifier(class_num=args.class_num, feature_dim=netG.in_features, 
-            bottleneck_dim=args.bottleneck_dim).cuda()
+            bottleneck_dim=args.bottleneck_dim).to(DEVICE) 
 
     if netB is None:
         if args.method == 'SHOT':
@@ -301,7 +302,7 @@ def pseudocal(args):
                 for inputs, targets in select_loader:
                     batch_size = inputs.size(0)
                     sample_num = batch_size
-                    inputs_a = inputs.cuda()
+                    inputs_a = inputs.to(DEVICE)
                     if args.aug == 'mixup':
                         clb_lam = args.lam
                     else:
